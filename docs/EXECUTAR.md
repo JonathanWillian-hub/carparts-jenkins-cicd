@@ -56,4 +56,6 @@ Associar cada artefato ao build e atualizar o relatório com os números reais. 
 
 ## 6. Encerramento
 
+`plugins.lock.txt` foi gerado por uma execução verde e fixa as 83 dependências instaladas. Para atualizar Jenkins/plugins, abrir PR separado, reconstruir o controller, validar JCasC, agentes e pipelines, comparar o novo lock e manter plano de retorno à imagem anterior.
+
 Aplicar `ENTREGA.md`, preencher RA e links, validar custo real, revisar histórico/logs/prints por segredos e remover recursos Azure pelo portal quando terminar.
