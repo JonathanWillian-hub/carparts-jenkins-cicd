@@ -21,14 +21,20 @@ def request(path, data=None, crumb=None):
 def capture():
     status=subprocess.run(['docker','compose','ps','-a'], text=True, capture_output=True)
     logs=subprocess.run(['docker','compose','logs','--no-color','--tail','300','controller'], text=True, capture_output=True)
+    safe_logs=logs.stdout+logs.stderr
+    for secret_file in ('admin_password','approver_password'):
+        secret=(Path('secrets')/secret_file).read_text().strip()
+        safe_logs=safe_logs.replace(secret,'***')
     (out/'compose-status.txt').write_text(status.stdout+status.stderr)
-    (out/'controller-startup.log').write_text(logs.stdout+logs.stderr)
+    (out/'controller-startup.log').write_text(safe_logs)
+    return safe_logs
 
 last=None
 for attempt in range(36):
     running=subprocess.run(['docker','compose','ps','--status','running','-q','controller'], text=True, capture_output=True).stdout.strip()
     if not running and attempt >= 2:
-        capture()
+        safe_logs=capture()
+        print(safe_logs[-12000:])
         raise RuntimeError('Container Jenkins parou durante a inicialização; consultar artefato controller-startup.log')
     try:
         with request('/computer/api/json') as response:
@@ -38,7 +44,8 @@ for attempt in range(36):
         last=repr(error)
         time.sleep(5)
 else:
-    capture()
+    safe_logs=capture()
+    print(safe_logs[-12000:])
     raise RuntimeError('Controller não respondeu em 180 segundos; última resposta: '+str(last))
 
 try:
