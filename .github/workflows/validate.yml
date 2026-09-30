@@ -53,11 +53,15 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import secrets
-          Path('secrets').mkdir(exist_ok=True)
+          directory=Path('secrets')
+          directory.mkdir(exist_ok=True)
+          directory.chmod(0o700)
           for name in ('admin_password', 'approver_password'):
-              p=Path('secrets')/name
+              p=directory/name
               p.write_text(secrets.token_urlsafe(48))
-              p.chmod(0o600)
+              # Compose monta arquivos locais preservando permissões no runner.
+              # O diretório 0700 protege o caminho no host; 0444 permite leitura ao UID do container.
+              p.chmod(0o444)
           PY
       - name: Construir e iniciar controller de teste
         run: |
