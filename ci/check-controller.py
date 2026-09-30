@@ -34,7 +34,7 @@ for attempt in range(36):
     running=subprocess.run(['docker','compose','ps','--status','running','-q','controller'], text=True, capture_output=True).stdout.strip()
     if not running and attempt >= 2:
         safe_logs=capture()
-        print(safe_logs[-12000:])
+        print(safe_logs)
         raise RuntimeError('Container Jenkins parou durante a inicialização; consultar artefato controller-startup.log')
     try:
         with request('/computer/api/json') as response:

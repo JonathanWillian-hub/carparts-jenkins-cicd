@@ -12,13 +12,14 @@ from getpass import getpass
 for name in ('admin_password','approver_password'):
     value=getpass('Senha longa para '+name+': ')
     if len(value)<16: raise SystemExit('Use pelo menos 16 caracteres')
-    p=Path('secrets')/name; p.write_text(value); p.chmod(0o600)
+    directory=Path('secrets'); directory.chmod(0o700)
+    p=directory/name; p.write_text(value); p.chmod(0o444)
 PY
 docker compose build --no-cache
 docker compose up -d
 ```
 
-Abrir `http://localhost:8080`, confirmar login obrigatório, Built-In Node com 0 executores e agentes configurados. Nunca versionar `secrets/` ou logs sem revisão.
+Abrir `http://localhost:8080`, confirmar login obrigatório, Built-In Node com 0 executores e agentes configurados. O diretório `secrets/` fica `0700`; os arquivos montados ficam `0444` porque o UID do container precisa lê-los. Nunca versionar esse diretório ou logs sem revisão.
 
 ## 2. Agentes
 

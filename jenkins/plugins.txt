@@ -10,3 +10,4 @@ matrix-auth
 junit
 ws-cleanup
 pipeline-stage-view
+timestamper
