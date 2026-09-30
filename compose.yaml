@@ -9,10 +9,8 @@ services:
     secrets:
       - source: admin_password
         target: ADMIN_PASSWORD
-        mode: 0444
       - source: approver_password
         target: APPROVER_PASSWORD
-        mode: 0444
     volumes:
       - jenkins_home:/var/jenkins_home
     # Nenhum socket Docker, porta 50000 ou ferramenta de build no controller.
