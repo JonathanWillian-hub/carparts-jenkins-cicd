@@ -1,0 +1,26 @@
+pipeline {
+  agent { label 'linux && ci' }
+  options { skipDefaultCheckout(true); timestamps(); timeout(time: 10, unit: 'MINUTES'); buildDiscarder(logRotator(numToKeepStr: '50')) }
+  stages {
+    stage('Checkout') { steps { deleteDir(); checkout scm } }
+    stage('Qualidade') {
+      steps {
+        sh 'cd app && npm ci --ignore-scripts --no-audit --no-fund && npm run lint'
+        sh 'python3 ci/audit.py'
+      }
+    }
+    stage('Testes') {
+      steps {
+        sh 'cd app && npm test'
+        sh 'node --test ci/test/*.test.mjs'
+        sh 'python3 ci/test/metrics_test.py'
+      }
+      post { always { junit testResults: 'test-results.xml', allowEmptyResults: false } }
+    }
+  }
+  post {
+    success { echo 'CI aprovada; status será informado pelo GitHub Branch Source.' }
+    failure { echo 'CI falhou; main deve impedir merge.' }
+    cleanup { deleteDir() }
+  }
+}

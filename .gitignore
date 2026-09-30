@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+secrets/
+**/node_modules/
+**/.azure/
+**/.docker/
+jenkins_home/
+*.pem
+*.key
+*.pfx
+*.jks
+__pycache__/
+metrics/downloads/
+/test-results.xml

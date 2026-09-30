@@ -1,0 +1,13 @@
+FROM node:22.16.0-alpine3.22
+WORKDIR /app
+COPY --chown=node:node app/package*.json ./
+RUN npm ci --omit=dev --ignore-scripts
+COPY --chown=node:node app/server.js ./
+COPY --chown=node:node app/public ./public
+ARG GIT_COMMIT
+ENV NODE_ENV=production PORT=3000 GIT_COMMIT=$GIT_COMMIT
+LABEL org.opencontainers.image.title="carparts-b2b" org.opencontainers.image.revision=$GIT_COMMIT
+USER node
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node", "server.js"]

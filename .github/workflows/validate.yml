@@ -1,0 +1,83 @@
+name: Validar projeto Carparts
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  app:
+    name: Aplicacao e seguranca
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Sintaxe, testes e invariantes
+        run: |
+          mkdir -p evidence/validation
+          python3 ci/audit.py | tee evidence/validation/audit.log
+          cd app
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run lint
+          npm test
+          cd ..
+          node --test ci/test/*.test.mjs | tee evidence/validation/approval-tests.log
+          python3 ci/test/metrics_test.py 2>&1 | tee evidence/validation/metrics-tests.log
+          bash -n ci/azure-login.sh ci/deploy.sh ci/rollback.sh infra/provision.sh infra/rbac.sh
+          cp test-results.xml evidence/validation/
+      - name: Build e smoke do container (sem Azure)
+        run: |
+          docker build --build-arg GIT_COMMIT="$GITHUB_SHA" -t carparts-local:test .
+          docker run -d --name carparts-local -p 127.0.0.1:3000:3000 carparts-local:test
+          python3 ci/check-local-container.py
+      - name: Remover container
+        if: always()
+        run: docker rm -f carparts-local >/dev/null 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validacao-aplicacao
+          path: evidence/validation/
+  jenkins:
+    name: Controller Jenkins e linter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gerar senhas locais efemeras, sem imprimi-las
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import secrets
+          Path('secrets').mkdir(exist_ok=True)
+          for name in ('admin_password', 'approver_password'):
+              p=Path('secrets')/name
+              p.write_text(secrets.token_urlsafe(48))
+              p.chmod(0o600)
+          PY
+      - name: Construir e iniciar controller de teste
+        run: |
+          docker compose build
+          docker compose up -d
+      - name: Verificar autenticacao, executores e Jenkinsfiles
+        run: python3 ci/check-controller.py
+      - name: Registrar versoes efetivamente resolvidas
+        run: |
+          mkdir -p "$RUNNER_TEMP/carparts-plugins"
+          docker cp "$(docker compose ps -q controller):/usr/share/jenkins/ref/plugins/." "$RUNNER_TEMP/carparts-plugins/"
+          python3 ci/plugin-lock.py "$RUNNER_TEMP/carparts-plugins" > evidence/validation/plugins.lock.txt
+          cat evidence/validation/plugins.lock.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validacao-controller
+          path: evidence/validation/
+      - name: Encerrar controller e remover segredos locais
+        if: always()
+        run: |
+          docker compose down -v
+          rm -rf secrets

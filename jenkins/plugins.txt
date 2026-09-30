@@ -1,0 +1,12 @@
+configuration-as-code
+workflow-aggregator
+pipeline-model-definition
+pipeline-input-step
+git
+github
+github-branch-source
+credentials-binding
+matrix-auth
+junit
+ws-cleanup
+pipeline-stage-view

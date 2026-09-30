@@ -1,0 +1,10 @@
+import { readFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+const [file, image, commit] = process.argv.slice(2);
+const approval = JSON.parse(readFileSync(file, 'utf8'));
+assert.equal(approval.image, image);
+assert.equal(approval.commit, commit);
+assert.equal(approval.approver, 'release-manager');
+assert.ok(Number.isFinite(Date.parse(approval.approvedAt)));
+assert.match(approval.buildUrl, /^https?:\/\//);
+console.log('Aprovação validada para o commit e digest desta execução');

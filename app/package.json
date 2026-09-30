@@ -1,0 +1,14 @@
+{
+  "name": "carparts-b2b",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "lint": "node --check server.js && node --check test/server.test.js",
+    "test": "node --test --test-reporter=junit --test-reporter-destination=../test-results.xml test/*.test.js"
+  }
+}

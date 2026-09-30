@@ -1,0 +1,23 @@
+services:
+  controller:
+    build: ./jenkins
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      SECRETS: /run/secrets
+    secrets:
+      - source: admin_password
+        target: ADMIN_PASSWORD
+      - source: approver_password
+        target: APPROVER_PASSWORD
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    # Nenhum socket Docker, porta 50000 ou ferramenta de build no controller.
+secrets:
+  admin_password:
+    file: ./secrets/admin_password
+  approver_password:
+    file: ./secrets/approver_password
+volumes:
+  jenkins_home:
